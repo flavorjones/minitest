@@ -119,23 +119,52 @@ describe "MiniTest::Spec meta" do
   end
 
   describe "inheritance" do
-    it "will be avoided" do
+    it "will be avoided, part 0" do
+      output, exit_code = run_spec do
+        describe "Level 1" do
+          describe "Level 2" do
+            it "unrelated test" do
+              assert true
+            end
+          end
+          it "should only run once" do
+            assert true
+          end
+        end
+      end
+      output.must_match(/\b2 tests/)
+    end
+
+    it "will be avoided, part 1" do
       output, exit_code = run_spec do
         describe "Level 1" do
           it "should only run once" do
             assert true
           end
           describe "Level 2" do
-            it "has a test" do
+            it "should only run once" do
               assert true
             end
           end
-          it "should also only run once" do
-            assert false
+        end
+      end
+      output.must_match(/\b2 tests/)
+    end
+
+    it "will be avoided, part 2" do
+      output, exit_code = run_spec do
+        describe "Level 1" do
+          describe "Level 2" do
+            it "should only run once" do
+              assert true
+            end
+          end
+          it "should only run once" do
+            assert true
           end
         end
       end
-      output.must_match(/\b3 tests/)
+      output.must_match(/\b2 tests/)
     end
   end
 
