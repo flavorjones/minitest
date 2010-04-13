@@ -29,7 +29,7 @@ describe "MiniTest::Spec meta" do
             end
           end
         end
-        output.must_match /Halloooooo!/
+        output.must_match(/Halloooooo!/)
       end
 
       it "should return success if successful" do
@@ -131,7 +131,7 @@ describe "MiniTest::Spec meta" do
             end
           end
           it "should also only run once" do
-            assert true
+            assert false
           end
         end
       end
