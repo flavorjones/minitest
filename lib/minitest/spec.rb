@@ -164,7 +164,9 @@ class MiniTest::Spec < MiniTest::Unit::TestCase
     define_method name, &block
 
     classes(MiniTest::Spec).each do |mod|
-      mod.send :undef_method, name if mod.respond_to? name
+      if mod.public_instance_methods.include?(name) && mod.instance_method(name.to_s).owner == self
+        mod.send :undef_method, name
+      end
     end
   end
 
