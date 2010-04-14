@@ -4,7 +4,10 @@ require 'tempfile'
 MiniTest::Unit.autorun
 
 describe "MiniTest::Spec meta" do
-
+  #
+  #  run the block (presumably a spec) in a subprocess,
+  #  capturing stdout and exit code.
+  #
   def run_spec &block
     output = IO.popen("-") do |pipe|
       if pipe
@@ -20,7 +23,7 @@ describe "MiniTest::Spec meta" do
   end
 
   describe "meta meta test" do
-    describe "run_spec" do
+    describe "#run_spec" do
       it "should return the output of the spec" do
         output, exit_code = run_spec do
           describe "embedded spec" do
@@ -32,7 +35,7 @@ describe "MiniTest::Spec meta" do
         output.must_match(/Halloooooo!/)
       end
 
-      it "should return success if successful" do
+      it "should return success if tests pass" do
         output, exit_code = run_spec do
           describe "embedded spec" do
             it "should succeed" do
@@ -43,7 +46,7 @@ describe "MiniTest::Spec meta" do
         assert exit_code.success?
       end
 
-      it "should return failure if failed" do
+      it "should return failure if a test fails" do
         output, exit_code = run_spec do
           describe "embedded spec" do
             it "should fail" do
@@ -56,9 +59,11 @@ describe "MiniTest::Spec meta" do
     end
   end
 
+  # ====================
+
   describe "the report" do
     describe "when there is no block passed to 'it'" do
-      it "should report a skipped spec" do
+      it "should indicate a skipped spec" do
         output, exit_code = run_spec do
           describe "blockless it" do
             it "should be reported as a skipped spec"
@@ -93,11 +98,15 @@ describe "MiniTest::Spec meta" do
       it "should run both specs" do
         output, exit_code = run_spec do
           describe "Level 1" do
-            it("should run me") { assert true }
-            it("should run me") { assert true }
+            it "should run me" do
+              assert true
+            end
+            it "should run me" do
+              assert true
+            end
           end
         end
-        output.must_match(/\b2 assertions/)
+        output.must_match(/\b2 tests, 2 assertions/)
       end
     end
 
@@ -106,10 +115,14 @@ describe "MiniTest::Spec meta" do
         output, exit_code = run_spec do
           describe "Level 1" do
             describe "Level 2a" do
-              it("should run me") { assert true }
+              it "should run me" do
+                assert true
+              end
             end
             describe "Level 2b" do
-              it("should run me") { assert true }
+              it "should run me" do
+                assert true
+              end
             end
           end
         end
@@ -128,11 +141,11 @@ describe "MiniTest::Spec meta" do
             end
           end
           it "should only run once" do
-            assert true
+            assert false
           end
         end
       end
-      output.must_match(/\b2 tests/)
+      output.must_match(/\b2 tests, 2 assertions, 1 failure/)
     end
 
     it "will be avoided, part 1" do
@@ -143,12 +156,12 @@ describe "MiniTest::Spec meta" do
           end
           describe "Level 2" do
             it "should only run once" do
-              assert true
+              assert false
             end
           end
         end
       end
-      output.must_match(/\b2 tests/)
+      output.must_match(/\b2 tests, 2 assertions, 1 failure/)
     end
 
     it "will be avoided, part 2" do
@@ -156,7 +169,7 @@ describe "MiniTest::Spec meta" do
         describe "Level 1" do
           describe "Level 2" do
             it "should only run once" do
-              assert true
+              assert false
             end
           end
           it "should only run once" do
@@ -164,7 +177,7 @@ describe "MiniTest::Spec meta" do
           end
         end
       end
-      output.must_match(/\b2 tests/)
+      output.must_match(/\b2 tests, 2 assertions, 1 failure/)
     end
   end
 
