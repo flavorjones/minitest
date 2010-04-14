@@ -497,15 +497,6 @@ module MiniTest
       @@out = stream
     end
 
-    def location e # :nodoc:
-      last_before_assertion = ""
-      e.backtrace.reverse_each do |s|
-        break if s =~ /in .(assert|refute|flunk|pass|fail|raise|must|wont)/
-        last_before_assertion = s
-      end
-      last_before_assertion.sub(/:in .*$/, '')
-    end
-
     ##
     # Writes status for failed test +meth+ in +klass+ which finished with
     # exception +e+
@@ -514,14 +505,13 @@ module MiniTest
       e = case e
           when MiniTest::Skip then
             @skips += 1
-            "Skipped:\n#{meth}(#{klass}) [#{location e}]:\n#{e.message}\n"
+            klass.skip_msg meth, e
           when MiniTest::Assertion then
             @failures += 1
-            "Failure:\n#{meth}(#{klass}) [#{location e}]:\n#{e.message}\n"
+            klass.fail_msg meth, e
           else
             @errors += 1
-            bt = MiniTest::filter_backtrace(e.backtrace).join("\n    ")
-            "Error:\n#{meth}(#{klass}):\n#{e.class}: #{e.message}\n    #{bt}\n"
+            klass.error_msg meth, e
           end
       @report << e
       e[0, 1]
@@ -706,6 +696,19 @@ module MiniTest
         @@test_suites[klass] = true
       end
 
+      def self.skip_msg meth, e
+        "Skipped:\n#{meth}(#{self}) [#{location e}]:\n#{e.message}\n"
+      end
+
+      def self.fail_msg meth, e
+        "Failure:\n#{meth}(#{self}) [#{location e}]:\n#{e.message}\n"
+      end
+
+      def self.error_msg meth, e
+        bt = MiniTest::filter_backtrace(e.backtrace).join("\n    ")
+        "Error:\n#{meth}(#{self}):\n#{e.class}: #{e.message}\n    #{bt}\n"
+      end
+
       ##
       # Defines test order and is subclassable. Defaults to :random
       # but can be overridden to return :alpha if your tests are order
@@ -751,6 +754,18 @@ module MiniTest
       def teardown; end
 
       include MiniTest::Assertions
+
+      private
+
+      def self.location e # :nodoc:
+        last_before_assertion = ""
+        e.backtrace.reverse_each do |s|
+            break if s =~ /in .(assert|refute|flunk|pass|fail|raise|must|wont)/
+            last_before_assertion = s
+          end
+        last_before_assertion.sub(/:in .*$/, '')
+      end
+
     end # class TestCase
   end # class Unit
 end # module MiniTest

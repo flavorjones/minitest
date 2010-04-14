@@ -7,6 +7,10 @@ MiniTest::Unit.autorun
 module M; end
 class E < StandardError; include M; end
 
+class TestSomeClass < MiniTest::Unit::TestCase
+  # used to test puking
+end
+
 class TestMiniTest < MiniTest::Unit::TestCase
   def setup
     srand 42
@@ -87,10 +91,10 @@ class TestMiniTest < MiniTest::Unit::TestCase
   def test_class_puke_with_assertion_failed
     exception = MiniTest::Assertion.new "Oh no!"
     exception.set_backtrace ["unhappy"]
-    assert_equal 'F', @tu.puke('SomeClass', 'method_name', exception)
+    assert_equal 'F', @tu.puke(TestSomeClass, 'method_name', exception)
     assert_equal 1, @tu.failures
     assert_match(/^Failure.*Oh no!/m, @tu.report.first)
-    assert_match("method_name(SomeClass) [unhappy]", @tu.report.first)
+    assert_match("method_name(TestSomeClass) [unhappy]", @tu.report.first)
   end
 
   def test_class_puke_with_failure_and_flunk_in_backtrace
@@ -99,7 +103,7 @@ class TestMiniTest < MiniTest::Unit::TestCase
                 rescue MiniTest::Assertion => failure
                   failure
                 end
-    assert_equal 'F', @tu.puke('SomeClass', 'method_name', exception)
+    assert_equal 'F', @tu.puke(TestSomeClass, 'method_name', exception)
     refute @tu.report.any?{|line| line =~ /in .flunk/}
   end
 
@@ -117,7 +121,7 @@ class TestMiniTest < MiniTest::Unit::TestCase
 
     exception = MiniTest::Assertion.new "Oh no!"
     exception.set_backtrace bt
-    assert_equal 'F', @tu.puke('TestSomeClass', 'test_method_name', exception)
+    assert_equal 'F', @tu.puke(TestSomeClass, 'test_method_name', exception)
     assert_equal 1, @tu.failures
     assert_match(/^Failure.*Oh no!/m, @tu.report.first)
     assert_match("test_method_name(TestSomeClass) [#{ex_location}]", @tu.report.first)
@@ -140,7 +144,7 @@ class TestMiniTest < MiniTest::Unit::TestCase
 
     exception = MiniTest::Assertion.new "Oh no!"
     exception.set_backtrace bt
-    assert_equal 'F', @tu.puke('TestSomeClass', 'test_method_name', exception)
+    assert_equal 'F', @tu.puke(TestSomeClass, 'test_method_name', exception)
     assert_equal 1, @tu.failures
     assert_match(/^Failure.*Oh no!/m, @tu.report.first)
     assert_match("test_method_name(TestSomeClass) [#{ex_location}]", @tu.report.first)
@@ -163,7 +167,7 @@ class TestMiniTest < MiniTest::Unit::TestCase
 
     exception = MiniTest::Assertion.new "Oh no!"
     exception.set_backtrace bt
-    assert_equal 'F', @tu.puke('TestSomeClass', 'test_method_name', exception)
+    assert_equal 'F', @tu.puke(TestSomeClass, 'test_method_name', exception)
     assert_equal 1, @tu.failures
     assert_match(/^Failure.*Oh no!/m, @tu.report.first)
     assert_match("test_method_name(TestSomeClass) [#{ex_location}]", @tu.report.first)
@@ -171,7 +175,7 @@ class TestMiniTest < MiniTest::Unit::TestCase
 
   def test_class_puke_with_non_failure_exception
     exception = Exception.new("Oh no again!")
-    assert_equal 'E', @tu.puke('SomeClass', 'method_name', exception)
+    assert_equal 'E', @tu.puke(TestSomeClass, 'method_name', exception)
     assert_equal 1, @tu.errors
     assert_match(/^Exception.*Oh no again!/m, @tu.report.first)
   end
