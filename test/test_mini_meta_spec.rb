@@ -61,7 +61,7 @@ describe "MiniTest::Spec meta" do
 
   # ====================
 
-  describe "the report" do
+  describe "reporting" do
     describe "when there is no block passed to 'it'" do
       it "should indicate a skipped spec" do
         output, exit_code = run_spec do
@@ -70,7 +70,28 @@ describe "MiniTest::Spec meta" do
           end
         end
         output.must_match(/\b1 skips/)
-        output.must_match(/Skipped:\ntest_0001_should_be_reported_as_a_skipped_spec/)
+      end
+    end
+
+    describe "when there is a skipped spec" do
+      it "should report the full spec description" do
+        output, exit_code = run_spec do
+          describe "This is an Outer describe" do
+            describe "and This is an Inner describe" do
+              it "and This is it"
+            end
+          end
+        end
+        output.must_match(/Skipped:\nThis is an Outer describe and This is an Inner describe and This is it/)
+      end
+
+      it "should report the line number of the skipped spec" do
+        output, exit_code = run_spec do
+          describe "foo" do
+            it "bar"
+          end
+        end
+        output.must_match %r{foo bar \[#{__FILE__}:#{__LINE__ - 3}\]}
       end
     end
   end

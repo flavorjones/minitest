@@ -68,14 +68,14 @@ module Kernel
 
   def describe desc, &block
     stack = MiniTest::Spec.describe_stack
-    prev  = stack.last
+    prev = stack.last.first
     cls = Class.new(prev)
 
     cls.nuke_test_methods!
 
     MiniTest::Spec.classes << cls
 
-    stack.push cls
+    stack.push [cls, desc]
     cls.class_eval(&block)
     stack.pop
   end
@@ -83,7 +83,9 @@ module Kernel
 end
 
 class MiniTest::Spec < MiniTest::Unit::TestCase
-  @@describe_stack = [MiniTest::Spec]
+  @@describe_stack = [[MiniTest::Spec, nil]]
+  @@method_to_desc = {}
+
   def self.describe_stack # :nodoc:
     @@describe_stack
   end
@@ -151,20 +153,35 @@ class MiniTest::Spec < MiniTest::Unit::TestCase
   # and match between assertions and expectations as much as you want.
 
   def self.it desc, &block
-    block ||= proc { skip "(no tests defined)" }
+    it_caller = caller
+    block ||= proc { skip "(no tests defined)", it_caller }
 
     @specs ||= 0
     @specs += 1
 
     name = "test_%04d_%s" % [ @specs, desc.gsub(/\W+/, '_').downcase ]
 
-    define_method name, &block
+    define_spec name, desc, &block
 
     (MiniTest::Spec.classes - [self]).each do |mod|
       if mod.public_instance_methods.include?(name) && mod.instance_method(name.to_s).owner == self
         mod.send :undef_method, name
       end
     end
+  end
+
+  def self.method_to_desc
+    @method_to_desc ||= {}
+  end
+
+  def self.define_spec name, desc, &block
+    method_to_desc[name] = (describe_stack.collect {|frame| frame.last} + [desc]).compact.join(" ")
+    define_method name, &block
+  end
+
+  def self.skip_msg meth, e
+    description = MiniTest::Spec.describe_stack.collect {|f| f.last }.join + method_to_desc[meth]
+    "Skipped:\n#{description} [#{location e}]"
   end
 
   ##
