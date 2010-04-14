@@ -68,12 +68,12 @@ module Kernel
 
   def describe desc, &block
     stack = MiniTest::Spec.describe_stack
-    name  = desc.to_s.split(/\W+/).map { |s| s.capitalize }.join + "Spec"
     prev  = stack.last
-    name  = "#{prev == MiniTest::Spec ? nil : prev}::#{name}"
-    cls   = Object.class_eval "class #{name} < #{prev}; end; #{name}"
+    cls = Class.new(prev)
 
     cls.nuke_test_methods!
+
+    MiniTest::Spec.classes << cls
 
     stack.push cls
     cls.class_eval(&block)
@@ -82,18 +82,15 @@ module Kernel
   private :describe
 end
 
-class Module
-  def classes type = Object # :nodoc:
-    constants.map { |n| const_get n }.find_all { |c|
-      c.class == Class and type > c
-    } - [self]
-  end
-end
-
 class MiniTest::Spec < MiniTest::Unit::TestCase
   @@describe_stack = [MiniTest::Spec]
   def self.describe_stack # :nodoc:
     @@describe_stack
+  end
+
+  @@classes = []
+  def self.classes
+    @@classes
   end
 
   def self.current # :nodoc:
@@ -163,7 +160,7 @@ class MiniTest::Spec < MiniTest::Unit::TestCase
 
     define_method name, &block
 
-    classes(MiniTest::Spec).each do |mod|
+    (MiniTest::Spec.classes - [self]).each do |mod|
       if mod.public_instance_methods.include?(name) && mod.instance_method(name.to_s).owner == self
         mod.send :undef_method, name
       end
