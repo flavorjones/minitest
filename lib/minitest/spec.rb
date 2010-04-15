@@ -184,6 +184,17 @@ class MiniTest::Spec < MiniTest::Unit::TestCase
     "Skipped:\n#{description} [#{location e}]"
   end
 
+  def self.fail_msg meth, e
+    description = MiniTest::Spec.describe_stack.collect {|f| f.last }.join + method_to_desc[meth]
+    "Failed:\n#{description} [#{location e}]:\n#{e.message}"
+  end
+
+  def self.error_msg meth, e
+    description = MiniTest::Spec.describe_stack.collect {|f| f.last }.join + method_to_desc[meth]
+    bt = MiniTest::filter_backtrace(e.backtrace).join("\n    ")
+    "Error:\n#{description} [#{location e}]\n#{e.message}\n    #{bt}\n"
+  end
+
   ##
   # :method: must_be
   # See MiniTest::Assertions#assert

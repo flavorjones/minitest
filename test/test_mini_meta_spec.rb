@@ -3,7 +3,7 @@ require 'tempfile'
 
 MiniTest::Unit.autorun
 
-describe "MiniTest::Spec meta" do
+describe "meta-MiniTest::Spec" do
   #
   #  run the block (presumably a spec) in a subprocess,
   #  capturing stdout and exit code.
@@ -91,7 +91,102 @@ describe "MiniTest::Spec meta" do
             it "bar"
           end
         end
-        output.must_match %r{foo bar \[#{__FILE__}:#{__LINE__ - 3}\]}
+        output.must_match %r{Skipped:\nfoo bar \[#{__FILE__}:#{__LINE__ - 3}\]}
+      end
+    end
+
+    describe "when there is a failed spec" do
+      it "should report the full spec description" do
+        output, exit_code = run_spec do
+          describe "This is an Outer describe" do
+            describe "and This is an Inner describe" do
+              it "and This is it" do
+                assert false
+              end
+            end
+          end
+        end
+        output.must_match(/Failed:\nThis is an Outer describe and This is an Inner describe and This is it/)
+      end
+
+      it "should report the line number of the failed assertion" do
+        output, exit_code = run_spec do
+          describe "foo" do
+            it "bar" do
+              assert false
+            end
+          end
+        end
+        output.must_match %r{Failed:\nfoo bar \[#{__FILE__}:#{__LINE__ - 4}\]}
+      end
+
+      it "should report the message from the failed assertion" do
+        output, exit_code = run_spec do
+          describe "foo" do
+            it "bar" do
+              assert false, "don't tread on me."
+            end
+          end
+        end
+        output.must_match %r{don\'t tread on me.}
+      end
+    end
+
+    describe "when there is a spec with an error" do
+      it "should report the full spec description" do
+        output, exit_code = run_spec do
+          describe "This is an Outer describe" do
+            describe "and This is an Inner describe" do
+              it "and This is it" do
+                raise "HELL"
+              end
+            end
+          end
+        end
+        output.must_match(/Error:\nThis is an Outer describe and This is an Inner describe and This is it/)
+      end
+
+      it "should report the line number of the error" do
+        output, exit_code = run_spec do
+          describe "foo" do
+            it "bar" do
+              raise "HELL"
+            end
+          end
+        end
+        output.must_match %r{Error:\nfoo bar \[#{__FILE__}:#{__LINE__ - 4}\]}
+      end
+
+      it "should report the message from the exception" do
+        output, exit_code = run_spec do
+          describe "foo" do
+            it "bar" do
+              raise "don't tread on me."
+            end
+          end
+        end
+        output.must_match %r{don\'t tread on me.}
+      end
+
+      it "should report the backtrace from the exception" do
+        output, exit_code = run_spec do
+          describe "foo" do
+            def exception_nesting_1
+              exception_nesting_2
+            end
+
+            def exception_nesting_2
+              raise "HELL"
+            end
+
+            it "bar" do
+              exception_nesting_1
+            end
+          end
+        end
+        output.must_match %r{#{__FILE__}:#{__LINE__ - 12}:in \`exception_nesting_1\'}
+        output.must_match %r{#{__FILE__}:#{__LINE__ - 9}:in \`exception_nesting_2\'}
+        output.must_match %r{#{__FILE__}:#{__LINE__ - 6}:in \`test_0001_bar\'}
       end
     end
   end
