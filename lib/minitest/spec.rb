@@ -180,19 +180,31 @@ class MiniTest::Spec < MiniTest::Unit::TestCase
   end
 
   def self.skip_msg meth, e
-    description = MiniTest::Spec.describe_stack.collect {|f| f.last }.join + method_to_desc[meth]
-    "Skipped:\n#{description} [#{location e}]"
+    if method_to_desc[meth]
+      description = MiniTest::Spec.describe_stack.collect {|f| f.last }.join + method_to_desc[meth]
+      "Skipped:\n#{description} [#{location e}]"
+    else
+      super
+    end
   end
 
   def self.fail_msg meth, e
-    description = MiniTest::Spec.describe_stack.collect {|f| f.last }.join + method_to_desc[meth]
-    "Failed:\n#{description} [#{location e}]:\n#{e.message}"
+    if method_to_desc[meth]
+      description = MiniTest::Spec.describe_stack.collect {|f| f.last }.join + method_to_desc[meth]
+      "Failed:\n#{description} [#{location e}]:\n#{e.message}"
+    else
+      super
+    end
   end
 
   def self.error_msg meth, e
-    description = MiniTest::Spec.describe_stack.collect {|f| f.last }.join + method_to_desc[meth]
-    bt = MiniTest::filter_backtrace(e.backtrace).join("\n    ")
-    "Error:\n#{description} [#{location e}]\n#{e.message}\n    #{bt}\n"
+    if method_to_desc[meth]
+      description = MiniTest::Spec.describe_stack.collect {|f| f.last }.join + method_to_desc[meth]
+      bt = MiniTest::filter_backtrace(e.backtrace).join("\n    ")
+      "Error:\n#{description} [#{location e}]\n#{e.message}\n    #{bt}\n"
+    else
+      super
+    end
   end
 
   ##

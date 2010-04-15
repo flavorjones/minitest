@@ -296,4 +296,27 @@ describe "meta-MiniTest::Spec" do
       output.must_match(/\b2 tests, 2 assertions, 1 failure/)
     end
   end
+
+  describe "mixed mode" do
+    describe "unit tests within a MiniTest::Spec class" do
+      it "should still work as expected" do
+        output, exit_code = run_spec do
+          class TestMixedMode < MiniTest::Spec
+            def test_success
+              assert true
+            end
+
+            def test_failure
+              assert false
+            end
+
+            def test_error
+              raise "HELL"
+            end
+          end
+        end
+        output.must_match(/\b3 tests, 2 assertions, 1 failures, 1 errors/)
+      end
+    end
+  end
 end
